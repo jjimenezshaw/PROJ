@@ -84,7 +84,7 @@ INSERT INTO "usage" VALUES(
     'grid_transformation',
     'PROJ',
     'EPSG_6667_TO_EPSG_6695',
-    'EPSG','3263', -- area of use: Japan - onshore mainland
+    'EPSG','1129', -- area of use: Japan - onshore and offshore
     'EPSG','1024'  -- unknown
 );
 
