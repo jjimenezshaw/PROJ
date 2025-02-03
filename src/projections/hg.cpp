@@ -52,6 +52,31 @@ static PJ_LP hg_s_inverse(PJ_XY xy, PJ *P) { /* Spheroidal, inverse */
     return (lp);
 }
 
+static double trig_fun_e(double e, double phi) {
+    // https://www.wolframalpha.com/input?i=1%2F2*k*y%5E2%3Dintegral%28cos%28x%29*%281-eps%5E2%29%2F%281-eps%C2%B2*sin%5E2%28x%29%29%C2%B2%29
+    const double esinphi = e * sin(phi);
+    return 0.5 * (1 - e * e) / e *
+           (esinphi / (1 - esinphi * esinphi) + atanh(esinphi));
+}
+
+static PJ_XY hg_e_forward(PJ_LP lp, PJ *P) { /* Ellipsoid, forward */
+    PJ_XY xy = {0.0, 0.0};
+    struct pj_hg_data *Q = static_cast<struct pj_hg_data *>(P->opaque);
+
+    const double sqrtsinphi = sqrt(fabs(trig_fun_e(P->e, lp.phi)));
+    const double sign = lp.phi >= 0 ? 1.0 : -1.0;
+    xy.y = 2 * sqrtsinphi * sign * Q->invsqrtm0;
+    xy.x = lp.lam * sqrtsinphi * Q->sqrtm0;
+    return (xy);
+}
+
+static PJ_LP hg_e_inverse(PJ_XY xy, PJ *P) { /* Ellipsoid, inverse */
+
+    PJ_LP lp = hg_s_inverse(xy, P);
+    constexpr double deltaXYTolerance = 1e-10;
+    return pj_generic_inverse_2d(xy, P, lp, deltaXYTolerance);
+}
+
 PJ *PJ_PROJECTION(hg) {
     struct pj_hg_data *Q =
         static_cast<struct pj_hg_data *>(calloc(1, sizeof(struct pj_hg_data)));
@@ -74,12 +99,18 @@ PJ *PJ_PROJECTION(hg) {
         }
     }
     const double cl1 = cos(lat1);
-    Q->m0 = cl1 * cl1 / sin(lat1);
+    const double sl1 = sin(lat1);
+    if (P->es == 0) {
+        Q->m0 = cl1 * cl1 / sl1;
+        P->inv = hg_s_inverse;
+        P->fwd = hg_s_forward;
+    } else {
+        Q->m0 = cl1 * cl1 / trig_fun_e(P->e, lat1) / (1 - P->e2 * sl1 * sl1);
+        P->inv = hg_e_inverse;
+        P->fwd = hg_e_forward;
+    }
     Q->sqrtm0 = sqrt(Q->m0);
     Q->invm0 = 1 / Q->m0;
     Q->invsqrtm0 = 1 / Q->sqrtm0;
-    P->inv = hg_s_inverse;
-    P->fwd = hg_s_forward;
-    P->es = 0.;
     return P;
 }
