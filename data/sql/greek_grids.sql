@@ -103,6 +103,23 @@ INSERT INTO "usage" VALUES(
     'PROJ','ETRS89_TO_GGRS87_HEPOS',
     'EPSG','3254','EPSG','1189');
 
+-- INSERT INTO "concatenated_operation" VALUES(
+--     'PROJ','WGS84_TO_GGRS87_HEPOS','ETRS89 (EPSG:4326) to GGRS87 (EPSG:4121)',
+--     'Transformation based on grid by HEPOS',
+--     'EPSG','4326',
+--     'EPSG','4121',
+--     0.9, -- accuracy, to be less than EPSG:1272
+--     NULL,
+--     0);
+-- INSERT INTO "concatenated_operation_step" VALUES('PROJ','WGS84_TO_GGRS87_HEPOS',1,'EPSG','1149','reverse');
+-- INSERT INTO "concatenated_operation_step" VALUES('PROJ','WGS84_TO_GGRS87_HEPOS',2,'PROJ','EPSG_4258_TO_HTR07_INTERMEDIATE_GRID','forward');
+-- INSERT INTO "concatenated_operation_step" VALUES('PROJ','WGS84_TO_GGRS87_HEPOS',3,'PROJ','HTR07_INTERMEDIATE_TO_GGRS87','forward');
+-- INSERT INTO "usage" VALUES(
+--     'PROJ','WGS84_TO_GGRS87_HEPOS_USAGE','concatenated_operation',
+--     'PROJ','WGS84_TO_GGRS87_HEPOS',
+--     'EPSG','3254','EPSG','1189');
+
+
 -- Change GGRS87 to WGS84 into ETRS89
 INSERT INTO "helmert_transformation" VALUES(
     'PROJ','GGRS87_TO_ETRS89','GGRS87 to ETRS89 (1)','',
