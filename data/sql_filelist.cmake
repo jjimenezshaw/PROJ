@@ -63,6 +63,7 @@ list(APPEND SQL_FILES
   "${SQL_DIR}/wgs84_realizations_concatenated_operations.sql"
   "${SQL_DIR}/customizations.sql"
   "${SQL_DIR}/nkg_post_customizations.sql"
+  "${SQL_DIR}/greek_grids.sql"
   "${SQL_DIR}/commit.sql"
 )
 if (NOT PROJ_DB_EXTRA_VALIDATION)
