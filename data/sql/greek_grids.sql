@@ -18,6 +18,103 @@ INSERT INTO "usage" VALUES(
     'EPSG','1027'  -- scope
 );
 
+-----
+-- Try with two steps and an axiliary CRS HTR07_INTERMEDIATE in between
+INSERT INTO "geodetic_datum" VALUES(
+    'PROJ',	'HTR07_INTERMEDIATE_DATUM',	'HTR07_INTERMEDIATE datum',	NULL,
+    'EPSG',	'7019', -- ellipsoid
+    'EPSG',	'8901',	-- prime meridian
+    '2025-03-05', -- publication date
+    NULL,NULL,NULL,NULL,
+    0);
+INSERT INTO "usage" VALUES(
+    'PROJ','HTR07_INTERMEDIATE_DATUM_USAGE','geodetic_datum','PROJ','HTR07_INTERMEDIATE_DATUM',
+    'EPSG','3254','EPSG','1153');
+
+INSERT INTO "geodetic_crs" VALUES(
+    'PROJ','HTR07_INTERMEDIATE','HTR07_INTERMEDIATE',NULL, -- PROJ CRS
+    'geographic 2D','EPSG','6422', -- geographic 3D
+    'PROJ','HTR07_INTERMEDIATE_DATUM', -- datum
+    NULL,
+    0);
+INSERT INTO "usage" VALUES(
+    'PROJ', 'HTR07_INTERMEDIATE_USAGE', 'geodetic_crs',
+    'PROJ', 'HTR07_INTERMEDIATE',
+    'EPSG','3254', -- extent: Greece - onshore
+    'EPSG','1027'  -- scope
+);
+
+INSERT INTO other_transformation VALUES(
+    'PROJ','EPSG_4258_TO_HTR07_INTERMEDIATE_GRID','ETRS89 to HTR07_INTERMEDIATE',
+    'Transformation based on grid by HEPOS using HTR07_INTERMEDIATE',
+    'PROJ','PROJString',
+    '+proj=pipeline
+    +step +proj=unitconvert +xy_in=deg +xy_out=rad
+    +step +proj=axisswap +order=2,1
+    +step +proj=tmerc +lat_0=0 +lon_0=24 +k=0.9996 +x_0=500000 +y_0=-2000000 +ellps=GRS80 +units=m
+    +step +proj=gridshift +grids=p4_gr_hepos_grid_in_ggrs87.tif
+    +step +inv +proj=tmerc +lat_0=0 +lon_0=24 +k=0.9996 +x_0=500000 +y_0=-2000000 +ellps=GRS80 +units=m
+    +step +proj=unitconvert +xy_in=rad +xy_out=deg
+    +step +proj=axisswap +order=2,1
+    ',
+    'EPSG','4258', -- source CRS (ETRS89)
+    'PROJ','HTR07_INTERMEDIATE', -- target CRS
+    0.01, -- Accuracy
+    NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+    0);
+INSERT INTO "usage" VALUES(
+    'PROJ', 'EPSG_4258_TO_HTR07_INTERMEDIATE_GRID_USAGE', 'other_transformation',
+    'PROJ', 'EPSG_4258_TO_HTR07_INTERMEDIATE_GRID',
+    'EPSG','3254', -- area of use: Greece onshore
+    'EPSG','1189' -- scope: GIS
+    );
+
+INSERT INTO "helmert_transformation" VALUES(
+    'PROJ','HTR07_INTERMEDIATE_TO_GGRS87','HTR07_INTERMEDIATE to GGRS87',
+    'Description','EPSG','9607','Coordinate Frame rotation (geog2D domain)',
+    'PROJ','HTR07_INTERMEDIATE',
+    'EPSG','4121',
+    0.02, -- accuracy
+    203.437,-73.461,-243.594, -- x,y,z
+    'EPSG','9001', -- meters
+    -0.170, -0.060, -0.151, -- rx,ry,rz
+    'EPSG','9104', -- arcsec
+    -0.294,'EPSG','9202', -- scale
+    NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+    'HEPOS',
+    0);
+INSERT INTO "usage" VALUES(
+    'PROJ', 'HTR07_INTERMEDIATE_TO_GGRS87_USAGE','helmert_transformation',
+    'PROJ','HTR07_INTERMEDIATE_TO_GGRS87',
+    'EPSG','3254', -- area of use: Greece onshore
+    'EPSG','1189' -- scope: GIS
+);
+
+INSERT INTO "concatenated_operation" VALUES(
+    'PROJ','ETRS89_TO_GGRS87_HEPOS','ETRS89 (EPSG:4258) to GGRS87 (EPSG:4121)',
+    'Transformation based on grid by HEPOS',
+    'EPSG','4258',
+    'EPSG','4121',NULL,NULL,
+    0);
+INSERT INTO "concatenated_operation_step" VALUES('PROJ','ETRS89_TO_GGRS87_HEPOS',1,'PROJ','EPSG_4258_TO_HTR07_INTERMEDIATE_GRID','forward');
+INSERT INTO "concatenated_operation_step" VALUES('PROJ','ETRS89_TO_GGRS87_HEPOS',2,'PROJ','HTR07_INTERMEDIATE_TO_GGRS87','forward');
+INSERT INTO "usage" VALUES(
+    'PROJ','ETRS89_TO_GGRS87_HEPOS_USAGE','concatenated_operation',
+    'PROJ','ETRS89_TO_GGRS87_HEPOS',
+    'EPSG','3254','EPSG','1189');
+
+-- Change GGRS87 to WGS84 into ETRS89
+INSERT INTO "helmert_transformation" VALUES(
+    'PROJ','GGRS87_TO_ETRS89','GGRS87 to ETRS89 (1)','',
+    'EPSG','9603','Geocentric translations (geog2D domain)','EPSG','4121','EPSG','4258',
+    1.0,-199.87,74.79,246.62,'EPSG','9001',
+    NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'Hel-Grc',
+    0);
+INSERT INTO "usage" VALUES('PROJ','GGRS87_TO_ETRS89_USAGE','helmert_transformation','PROJ','GGRS87_TO_ETRS89','EPSG','3254','EPSG','1041');
+
+UPDATE "helmert_transformation_table" SET deprecated='1' WHERE auth_name = 'EPSG' AND code = '1272';
+-----
+
 --- Greek horizontal transformations
 INSERT INTO other_transformation VALUES(
     'PROJ','EPSG_4258_TO_EPSG_4121_GRID','ETRS89 to GGRS87 (1)',
@@ -43,7 +140,7 @@ INSERT INTO other_transformation VALUES(
     'EPSG','4121', -- target CRS (GGRS87)
     0.05, -- Accuracy
     NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-    0);
+    1);
 INSERT INTO "usage" VALUES(
     'PROJ',
     'EPSG_4258_TO_EPSG_4121_GRID_USAGE',
@@ -76,7 +173,7 @@ INSERT INTO other_transformation VALUES(
     'PROJ','GGRS87_3D', -- target CRS (GGRS87)
     0.04, -- Accuracy
     NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-    0);
+    1);
 INSERT INTO "usage" VALUES(
     'PROJ',
     'EPSG_4937_TO_EPSG_4121_GRID_USAGE',
