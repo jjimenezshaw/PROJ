@@ -1,11 +1,11 @@
 /******************************************************************************
  *
  * Project:  PROJ
- * Purpose:  Test ISO19111:2019 implementation
- * Author:   Even Rouault <even dot rouault at spatialys dot com>
+ * Purpose:  Test projinfo_lib API
+ * Author:   Javier Jimenez Shaw
  *
  ******************************************************************************
- * Copyright (c) 2018, Even Rouault <even dot rouault at spatialys dot com>
+ * Copyright (c) 2025, Javier Jimenez Shaw
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -26,23 +26,33 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
- #include "gtest_include.h"
+#include "gtest_include.h"
 
- #include "apps/projapps_lib.h"
- 
- #include <iostream>
- 
- 
- // ---------------------------------------------------------------------------
- 
- TEST(projinfo_lib, simple) {
-    auto dump = [](const char* s) {
-        std::cout << s ;
+#include "apps/projapps_lib.h"
+
+#include <iostream>
+
+// ---------------------------------------------------------------------------
+
+TEST(projinfo_lib, simple) {
+    auto dump = [](const char *s) {
+        std::cout << s;
+        std::string str(s);
+        if (str.find("PROJCS[\"ETRS89 / UTM zone 32N\"") != std::string::npos) {
+            //found = true;
+        }
     };
-    auto dump_err = [](const char* s) {
-        std::cerr << s ;
+    auto dump_err = [](const char *s) {
+        std::cerr << s;
+        //some_err = true;
     };
-    int res = PROJInfo(nullptr, dump, dump_err, dump_err);
+
+    const char *argv[] = {"testing", "EPSG:25832", "-o", "WKT1_GDAL", nullptr};
+    int argc = 4;
+
+    std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
+        PROJInfoOptionsNew(argc, (char **)argv), PROJInfoOptionsFree);
+
+    int res = PROJInfo(options.get(), dump, dump_err, dump_err);
     EXPECT_EQ(res, 0);
- }
- 
+}
