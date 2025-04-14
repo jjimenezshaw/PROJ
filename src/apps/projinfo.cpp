@@ -50,6 +50,8 @@
 
 #include "proj/internal/internal.hpp" // for split
 
+#include "projapps_lib.h"
+
 using namespace NS_PROJ::common;
 using namespace NS_PROJ::coordinates;
 using namespace NS_PROJ::crs;
