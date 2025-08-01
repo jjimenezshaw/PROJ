@@ -35,6 +35,10 @@
 #define _GNU_SOURCE
 #endif
 
+#if defined(__EMSCRIPTEN__) || defined(FROM_PROJ_CPP) // TODO remove OR
+#define DO_EMSCRIPTEN
+#endif
+
 #include <stdlib.h>
 
 #include <algorithm>
@@ -53,6 +57,12 @@
 #ifdef CURL_ENABLED
 #include <curl/curl.h>
 #include <sqlite3.h> // for sqlite3_snprintf
+#endif
+
+#ifdef DO_EMSCRIPTEN
+#include <emscripten/fetch.h>
+#include <sqlite3.h> // for sqlite3_snprintf
+#include <unordered_map>
 #endif
 
 #include <sys/stat.h>
@@ -1922,6 +1932,190 @@ static const char *pj_curl_get_header_value(PJ_CONTEXT *,
     return handle->m_lastval.c_str();
 }
 
+#elif defined(DO_EMSCRIPTEN)
+
+constexpr double MIN_RETRY_DELAY_MS = 500;
+constexpr double MAX_RETRY_DELAY_MS = 60000;
+struct EmscriptenFileHandle {
+    PJ_CONTEXT *m_ctx; // for logging? TODO
+    std::string m_url;
+    std::string m_headers{};
+    std::string m_lastval{};
+    std::string m_useragent{};
+
+    EmscriptenFileHandle(const EmscriptenFileHandle &) = delete;
+    EmscriptenFileHandle &operator=(const EmscriptenFileHandle &) = delete;
+    explicit EmscriptenFileHandle(PJ_CONTEXT *ctx, const char *url);
+    ~EmscriptenFileHandle();
+
+    static PROJ_NETWORK_HANDLE *
+    open(PJ_CONTEXT *, const char *url, unsigned long long offset,
+         size_t size_to_read, void *buffer, size_t *out_size_read,
+         size_t error_string_max_size, char *out_error_string, void *);
+};
+
+EmscriptenFileHandle::EmscriptenFileHandle(PJ_CONTEXT *ctx, const char *url)
+    : m_ctx(ctx), m_url(url) {
+
+    pj_log(ctx, PJ_LOG_DEBUG, "EmscriptenFileHandle created with url %s", url);
+    if (getenv("PROJ_NO_USERAGENT") == nullptr) {
+        m_useragent = "PROJ " STR(PROJ_VERSION_MAJOR) "." STR(
+            PROJ_VERSION_MINOR) "." STR(PROJ_VERSION_PATCH);
+        const auto exeName = std::string{}; // TODO: GetExecutableName();
+        if (!exeName.empty()) {
+            m_useragent = exeName + " using " + m_useragent;
+        }
+    }
+}
+
+// Same as in Curl?
+static double GetNewRetryDelay(int response_code, double dfOldDelay,
+                               const char *pszErrBuf,
+                               const char *pszCurlError) {
+    if (response_code == 429 || response_code == 500 ||
+        (response_code >= 502 && response_code <= 504) ||
+        // S3 sends some client timeout errors as 400 Client Error
+        (response_code == 400 && pszErrBuf &&
+         strstr(pszErrBuf, "RequestTimeout")) ||
+        (pszCurlError && strstr(pszCurlError, "Connection reset by peer")) ||
+        (pszCurlError && strstr(pszCurlError, "Connection timed out")) ||
+        (pszCurlError && strstr(pszCurlError, "SSL connection timeout"))) {
+        // Use an exponential backoff factor of 2 plus some random jitter
+        // We don't care about cryptographic quality randomness, hence:
+        // coverity[dont_call]
+        return dfOldDelay * (2 + rand() * 0.5 / RAND_MAX);
+    } else {
+        return 0;
+    }
+}
+
+static size_t pj_emscripten_read_range(PJ_CONTEXT *ctx,
+                                       PROJ_NETWORK_HANDLE *raw_handle,
+                                       unsigned long long offset,
+                                       size_t size_to_read, void *buffer,
+                                       size_t error_string_max_size,
+                                       char *out_error_string, void *) {
+    auto handle = reinterpret_cast<EmscriptenFileHandle *>(raw_handle);
+
+    double oldDelay = MIN_RETRY_DELAY_MS;
+
+    char szBuffer[128];
+    sqlite3_snprintf(sizeof(szBuffer), szBuffer, "bytes=%llu-%llu", offset,
+                     offset + size_to_read - 1);
+
+    emscripten_fetch_t *fetch = nullptr;
+    while (true) {
+
+        emscripten_fetch_attr_t attr;
+        emscripten_fetch_attr_init(&attr);
+        strcpy(attr.requestMethod, "GET");
+        const char *requestHeaders[] = {"Range", szBuffer, "User-Agent",
+                                        handle->m_useragent.c_str(), nullptr};
+        attr.requestHeaders = requestHeaders;
+        attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY |
+                          EMSCRIPTEN_FETCH_SYNCHRONOUS |
+                          EMSCRIPTEN_FETCH_REPLACE;
+        if (fetch)
+            emscripten_fetch_close(fetch);
+        fetch = emscripten_fetch(&attr, handle->m_url.c_str());
+        if (!fetch) {
+            snprintf(out_error_string, error_string_max_size,
+                     "Cannot init emscripten_fetch for url %s",
+                     handle->m_url.c_str());
+            return 0;
+        }
+        auto response_code = fetch->status;
+        if (response_code == 0 || response_code >= 300) {
+            const double delay =
+                GetNewRetryDelay(static_cast<int>(response_code), oldDelay,
+                                 fetch->data, fetch->statusText);
+            if (delay != 0 && delay < MAX_RETRY_DELAY_MS) {
+                pj_log(ctx, PJ_LOG_TRACE,
+                       "Got a HTTP %ld error. Retrying in %d ms", response_code,
+                       static_cast<int>(delay));
+                sleep_ms(static_cast<int>(delay));
+                oldDelay = delay;
+            } else {
+                if (out_error_string) {
+                    if (fetch->statusText[0]) {
+                        snprintf(out_error_string, error_string_max_size, "%s",
+                                 fetch->statusText);
+                    } else {
+                        snprintf(out_error_string, error_string_max_size,
+                                 "HTTP error %hu: %s", response_code,
+                                 fetch->data);
+                    }
+                }
+                emscripten_fetch_close(fetch);
+                return 0;
+            }
+        } else {
+            break;
+        }
+    }
+    if (out_error_string && error_string_max_size) {
+        out_error_string[0] = '\0';
+    }
+
+    const size_t numBytes = fetch->numBytes; // TODO 64 to 32 ?
+    const auto real_read = std::min(size_to_read, numBytes);
+    if (numBytes) {
+        memcpy(buffer, fetch->data, real_read);
+    }
+
+    size_t headers_length = emscripten_fetch_get_response_headers_length(fetch);
+    std::string headers(' ', headers_length + 1);
+    emscripten_fetch_get_response_headers(fetch, &headers[0],
+                                          headers_length + 1);
+    handle->m_headers = headers;
+
+    emscripten_fetch_close(fetch);
+    return real_read;
+}
+
+static const char *
+pj_emscripten_get_header_value(PJ_CONTEXT *, PROJ_NETWORK_HANDLE *raw_handle,
+                               const char *header_name, void *) {
+    auto handle = reinterpret_cast<EmscriptenFileHandle *>(raw_handle);
+    auto pos = ci_find(handle->m_headers, header_name);
+    if (pos == std::string::npos)
+        return nullptr;
+    pos += strlen(header_name);
+    const char *c_str = handle->m_headers.c_str();
+    if (c_str[pos] == ':')
+        pos++;
+    while (c_str[pos] == ' ')
+        pos++;
+    auto posEnd = pos;
+    while (c_str[posEnd] != '\r' && c_str[posEnd] != '\n' &&
+           c_str[posEnd] != '\0')
+        posEnd++;
+    handle->m_lastval = handle->m_headers.substr(pos, posEnd - pos);
+    return handle->m_lastval.c_str();
+}
+
+static void pj_emscripten_close(PJ_CONTEXT *, PROJ_NETWORK_HANDLE *handle,
+                                void * /*user_data*/) {
+    delete reinterpret_cast<EmscriptenFileHandle *>(handle);
+}
+
+PROJ_NETWORK_HANDLE *EmscriptenFileHandle::open(
+    PJ_CONTEXT *ctx, const char *url, unsigned long long offset,
+    size_t size_to_read, void *buffer, size_t *out_size_read,
+    size_t error_string_max_size, char *out_error_string, void *) {
+
+    auto file = std::unique_ptr<EmscriptenFileHandle>(
+        new EmscriptenFileHandle(ctx, url));
+
+    PROJ_NETWORK_HANDLE *handle =
+        reinterpret_cast<PROJ_NETWORK_HANDLE *>(file.get());
+    *out_size_read = pj_emscripten_read_range(
+        ctx, handle, offset, size_to_read, buffer, error_string_max_size,
+        out_error_string, nullptr);
+
+    return reinterpret_cast<PROJ_NETWORK_HANDLE *>(file.release());
+}
+
 #else
 
 // ---------------------------------------------------------------------------
@@ -1956,6 +2150,11 @@ void FileManager::fillDefaultNetworkInterface(PJ_CONTEXT *ctx) {
     ctx->networking.close = pj_curl_close;
     ctx->networking.read_range = pj_curl_read_range;
     ctx->networking.get_header_value = pj_curl_get_header_value;
+#elif defined(DO_EMSCRIPTEN)
+    ctx->networking.open = EmscriptenFileHandle::open;
+    ctx->networking.close = pj_emscripten_close;
+    ctx->networking.read_range = pj_emscripten_read_range;
+    ctx->networking.get_header_value = pj_emscripten_get_header_value;
 #else
     ctx->networking.open = no_op_network_open;
     ctx->networking.close = no_op_network_close;
@@ -2064,6 +2263,8 @@ int proj_context_set_enable_network(PJ_CONTEXT *ctx, int enable) {
     pj_load_ini(ctx);
     ctx->networking.enabled = enable != FALSE;
 #ifdef CURL_ENABLED
+    return ctx->networking.enabled;
+#elif defined(DO_EMSCRIPTEN)
     return ctx->networking.enabled;
 #else
     return ctx->networking.enabled &&
