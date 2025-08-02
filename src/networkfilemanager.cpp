@@ -35,7 +35,10 @@
 #define _GNU_SOURCE
 #endif
 
-#if defined(__EMSCRIPTEN__) || defined(FROM_PROJ_CPP) // TODO remove OR
+#if defined(__EMSCRIPTEN__)
+#ifndef __EMSCRIPTEN_PTHREADS__
+// #error "__EMSCRIPTEN_PTHREADS__ not defined. Are you setting -pthread?"
+#endif
 #define DO_EMSCRIPTEN
 #endif
 
@@ -1967,6 +1970,8 @@ EmscriptenFileHandle::EmscriptenFileHandle(PJ_CONTEXT *ctx, const char *url)
         }
     }
 }
+
+EmscriptenFileHandle::~EmscriptenFileHandle() {}
 
 // Same as in Curl?
 static double GetNewRetryDelay(int response_code, double dfOldDelay,
