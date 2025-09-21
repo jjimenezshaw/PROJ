@@ -589,6 +589,17 @@ List of all projection images
 ********************************************************************************
 
 
+:ref:`hourglass`
+
+.. figure:: ./images/hourglass.png
+   :width: 500 px
+   :align: center
+   :alt:   hourglass
+
+
+********************************************************************************
+
+
 :ref:`igh`
 
 .. figure:: ./images/igh.png
