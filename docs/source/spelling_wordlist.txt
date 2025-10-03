@@ -699,12 +699,14 @@ nul
 NUL
 nullable
 nullptr
+nyder
 objectDomain
 Oblated
 ocea
 oceania
 ocentric
 oea
+ohn
 ogc
 OGC
 ok
@@ -738,6 +740,7 @@ ossfuzz
 Ostend
 ou
 packageName
+Pallero
 param
 parameterising
 parametres
