@@ -4,7 +4,7 @@
 Hourglass
 ********************************************************************************
 
-Snyder's Hourglass projection, using the extended formulas described in XXX.
+Snyder's Hourglass projection, using the extended formulas described in :cite:`JimenezShaw2025`.
 
 .. versionadded:: 9.8.0
 
