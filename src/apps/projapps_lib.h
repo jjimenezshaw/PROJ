@@ -44,8 +44,9 @@ void PROJ_DLL PROJInfoOptionsFree(PROJInfoOptions *psOptions);
 /*
  * Internal C implementation of projinfo
  */
-int PROJ_DLL PROJInfo(PROJInfoOptions *opts, void (*fout)(const char *),
-                      void (*ferr)(const char *), void (*fwarn)(const char *));
+int PROJ_DLL PROJInfo(PROJInfoOptions *opts,
+                      void (*callback)(int type, const char *, void *),
+                      void *data);
 
 #ifdef __cplusplus
 }
