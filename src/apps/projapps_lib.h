@@ -42,11 +42,21 @@ PROJInfoOptions PROJ_DLL *PROJInfoOptionsNew(int argc, char **argv);
 void PROJ_DLL PROJInfoOptionsFree(PROJInfoOptions *psOptions);
 
 /*
+ * Level for the output given by PROJInfo.
+ */
+enum PROJInfoLogLevel {
+    PROJInfoLogLevel_INFO = 1,
+    PROJInfoLogLevel_WARN = 2,
+    PROJInfoLogLevel_ERR = 3,
+};
+
+typedef void (*projinfo_cb_t)(PROJInfoLogLevel level, const char *msg,
+                              void *data);
+
+/*
  * Internal C implementation of projinfo
  */
-int PROJ_DLL PROJInfo(PROJInfoOptions *opts,
-                      void (*callback)(int type, const char *, void *),
-                      void *data);
+int PROJ_DLL PROJInfo(PROJInfoOptions *opts, projinfo_cb_t cb, void *data);
 
 #ifdef __cplusplus
 }
