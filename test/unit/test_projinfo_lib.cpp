@@ -53,7 +53,7 @@ TEST(projinfo_lib, simple) {
     std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
         PROJInfoOptionsNew(argc, (char **)argv), PROJInfoOptionsFree);
 
-    int res = PROJInfo(options.get(), dump, &found);
+    int res = PROJInfo(options.get(), dump, &found, nullptr);
     EXPECT_EQ(res, 0);
     EXPECT_EQ(found, true);
 }
@@ -77,7 +77,7 @@ TEST(projinfo_lib, error) {
     std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
         PROJInfoOptionsNew(argc, (char **)argv), PROJInfoOptionsFree);
 
-    int res = PROJInfo(options.get(), dump, &found);
+    int res = PROJInfo(options.get(), dump, &found, nullptr);
     EXPECT_EQ(res, 1);
     EXPECT_EQ(found, true);
 }
@@ -101,7 +101,48 @@ TEST(projinfo_lib, warning) {
     std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
         PROJInfoOptionsNew(argc, (char **)argv), PROJInfoOptionsFree);
 
-    int res = PROJInfo(options.get(), dump, &found);
+    int res = PROJInfo(options.get(), dump, &found, nullptr);
     EXPECT_EQ(res, 0);
     EXPECT_EQ(found, true);
+}
+
+TEST(projinfo_lib, use_ctx) {
+    auto dump = [](PROJInfoLogLevel level, const char *s, void *data) {
+        bool *local_found = static_cast<bool *>(data);
+        if (level == PROJInfoLogLevel_INFO) {
+            std::string str(s);
+            if (str.find("PROJCS[\"ETRS89 / UTM zone 3") != std::string::npos) {
+                *local_found = true;
+            }
+        }
+    };
+
+    PJ_CONTEXT *ctx = proj_context_create();
+    {
+        const char *argv[] = {"testing", "EPSG:25832", "-o", "WKT1_GDAL"};
+        constexpr int argc = sizeof(argv) / sizeof(*argv);
+
+        bool found = false;
+        std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)>
+            options(PROJInfoOptionsNew(argc, (char **)argv),
+                    PROJInfoOptionsFree);
+
+        int res = PROJInfo(options.get(), dump, &found, ctx);
+        EXPECT_EQ(res, 0);
+        EXPECT_EQ(found, true);
+    }
+    {
+        const char *argv[] = {"testing", "EPSG:25833", "-o", "WKT1_GDAL"};
+        constexpr int argc = sizeof(argv) / sizeof(*argv);
+
+        bool found = false;
+        std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)>
+            options(PROJInfoOptionsNew(argc, (char **)argv),
+                    PROJInfoOptionsFree);
+
+        int res = PROJInfo(options.get(), dump, &found, ctx);
+        EXPECT_EQ(res, 0);
+        EXPECT_EQ(found, true);
+    }
+    proj_context_destroy(ctx);
 }

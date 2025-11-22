@@ -56,7 +56,7 @@ typedef void (*projinfo_cb_t)(PROJInfoLogLevel level, const char *msg,
 /*
  * Internal C implementation of projinfo
  */
-int PROJ_DLL PROJInfo(PROJInfoOptions *opts, projinfo_cb_t cb, void *data);
+int PROJ_DLL PROJInfo(PROJInfoOptions *opts, projinfo_cb_t cb, void *data, PJ_CONTEXT* ctx);
 
 #ifdef __cplusplus
 }

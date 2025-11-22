@@ -1512,7 +1512,8 @@ static void suggestCompletion(const std::vector<std::string> &args) {
 
 // ---------------------------------------------------------------------------
 
-static int main_projinfo(std::vector<std::string> argv, Streamer &strm) {
+static int main_projinfo(std::vector<std::string> argv, Streamer &strm,
+                         PJ_CONTEXT *ctx) {
     int argc = static_cast<int>(argv.size());
     if (argc == 1) {
         strm.cerr << pj_get_release() << std::endl;
@@ -1543,7 +1544,7 @@ static int main_projinfo(std::vector<std::string> argv, Streamer &strm) {
         CoordinateOperationContext::SourceTargetCRSExtentUse::SMALLEST;
     bool buildBoundCRSToWGS84 = false;
     CoordinateOperationContext::GridAvailabilityUse gridAvailabilityUse =
-        proj_context_is_network_enabled(nullptr)
+        proj_context_is_network_enabled(ctx)
             ? CoordinateOperationContext::GridAvailabilityUse::KNOWN_AVAILABLE
             : CoordinateOperationContext::GridAvailabilityUse::USE_FOR_SORTING;
     CoordinateOperationContext::IntermediateCRSUse allowUseIntermediateCRS =
@@ -1866,9 +1867,9 @@ static int main_projinfo(std::vector<std::string> argv, Streamer &strm) {
             return 0;
         } else if (ci_equal(arg, "--remote-data")) {
 #ifdef CURL_ENABLED
-            if (proj_context_is_network_enabled(nullptr)) {
+            if (proj_context_is_network_enabled(ctx)) {
                 strm.cout << "Status: enabled" << std::endl;
-                strm.cout << "URL: " << proj_context_get_url_endpoint(nullptr)
+                strm.cout << "URL: " << proj_context_get_url_endpoint(ctx)
                           << std::endl;
             } else {
                 strm.cout << "Status: disabled" << std::endl;
@@ -1920,7 +1921,7 @@ static int main_projinfo(std::vector<std::string> argv, Streamer &strm) {
     DatabaseContextPtr dbContext;
     try {
         dbContext =
-            DatabaseContext::create(mainDBPath, auxDBPath).as_nullable();
+            DatabaseContext::create(mainDBPath, auxDBPath, ctx).as_nullable();
     } catch (const std::exception &e) {
         if (!mainDBPath.empty() || !auxDBPath.empty() || !area.empty() ||
             dumpDbStructure || listCRSSpecified) {
@@ -2244,7 +2245,8 @@ PROJInfoOptions *PROJInfoOptionsNew(int argc, char **argv) {
 
 void PROJInfoOptionsFree(PROJInfoOptions *psOptions) { delete psOptions; }
 
-int PROJInfo(PROJInfoOptions *psOptions, projinfo_cb_t callback, void *data) {
+int PROJInfo(PROJInfoOptions *psOptions, projinfo_cb_t callback, void *data,
+             PJ_CONTEXT *ctx) {
 
     Streamer strm(callback, data);
     if (psOptions == nullptr) {
@@ -2252,7 +2254,7 @@ int PROJInfo(PROJInfoOptions *psOptions, projinfo_cb_t callback, void *data) {
         return 1;
     }
 
-    return main_projinfo(psOptions->argv, strm);
+    return main_projinfo(psOptions->argv, strm, ctx);
 }
 
 //! @endcond
