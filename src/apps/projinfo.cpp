@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
     std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
         PROJInfoOptionsNew(argc, argv), PROJInfoOptionsFree);
 
-    int res = PROJInfo(options.get(), dump, nullptr);
+    int res = PROJInfo(options.get(), dump, nullptr, nullptr);
     return res;
 }
 
