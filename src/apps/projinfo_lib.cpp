@@ -92,17 +92,17 @@ struct OutputOptions {
 namespace {
 struct Streamer {
   public:
-    template <int TYPE> class Stream {
+    template <PROJInfoLogLevel LEVEL> class Stream {
       private:
         std::stringstream ss{};
-        void (*f)(int type, const char *, void *);
+        projinfo_cb_t callback;
         void *data;
         template <typename T> inline void doit(const T &t) {
-            if (f) {
+            if (callback) {
                 ss.str("");
                 ss.clear();
                 ss << t;
-                f(TYPE, ss.str().c_str(), data);
+                callback(LEVEL, ss.str().c_str(), data);
             }
         }
         Stream(const Stream &) = delete;
@@ -111,8 +111,8 @@ struct Streamer {
         Stream &operator=(Stream &&) = delete;
 
       public:
-        Stream(void (*f_in)(int type, const char *, void *), void *data_in)
-            : f{f_in}, data{data_in} {}
+        Stream(projinfo_cb_t cb_in, void *data_in)
+            : callback{cb_in}, data{data_in} {}
 
         /* for std::endl */
         inline Stream &operator<<(std::ostream &(*func)(std::ostream &)) {
@@ -127,12 +127,12 @@ struct Streamer {
         }
     };
 
-    Streamer(void (*callback)(int type, const char *, void *), void *data)
+    Streamer(projinfo_cb_t callback, void *data)
         : cout(callback, data), cerr(callback, data), cwarn(callback, data) {}
 
-    Stream<1> cout;
-    Stream<2> cerr;
-    Stream<3> cwarn;
+    Stream<PROJInfoLogLevel_INFO> cout;
+    Stream<PROJInfoLogLevel_ERR> cerr;
+    Stream<PROJInfoLogLevel_WARN> cwarn;
 };
 } // namespace
 
@@ -1513,7 +1513,7 @@ static void suggestCompletion(const std::vector<std::string> &args) {
 // ---------------------------------------------------------------------------
 
 static int main_projinfo(std::vector<std::string> argv, Streamer &strm) {
-    int argc = argv.size();
+    int argc = static_cast<int>(argv.size());
     if (argc == 1) {
         strm.cerr << pj_get_release() << std::endl;
         return usage(strm);
@@ -2244,8 +2244,7 @@ PROJInfoOptions *PROJInfoOptionsNew(int argc, char **argv) {
 
 void PROJInfoOptionsFree(PROJInfoOptions *psOptions) { delete psOptions; }
 
-int PROJInfo(PROJInfoOptions *psOptions,
-             void (*callback)(int type, const char *, void *), void *data) {
+int PROJInfo(PROJInfoOptions *psOptions, projinfo_cb_t callback, void *data) {
 
     Streamer strm(callback, data);
     if (psOptions == nullptr) {

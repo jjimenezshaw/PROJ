@@ -35,9 +35,9 @@
 // ---------------------------------------------------------------------------
 
 TEST(projinfo_lib, simple) {
-    auto dump = [](int type, const char *s, void *data) {
+    auto dump = [](PROJInfoLogLevel level, const char *s, void *data) {
         bool *local_found = static_cast<bool *>(data);
-        if (type == 1) {
+        if (level == PROJInfoLogLevel_INFO) {
             std::string str(s);
             if (str.find("PROJCS[\"ETRS89 / UTM zone 32N\"") !=
                 std::string::npos) {
@@ -46,8 +46,8 @@ TEST(projinfo_lib, simple) {
         }
     };
 
-    const char *argv[] = {"testing", "EPSG:25832", "-o", "WKT1_GDAL", nullptr};
-    constexpr int argc = sizeof(argv) / sizeof(*argv) - 1;
+    const char *argv[] = {"testing", "EPSG:25832", "-o", "WKT1_GDAL"};
+    constexpr int argc = sizeof(argv) / sizeof(*argv);
 
     bool found = false;
     std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
@@ -59,9 +59,9 @@ TEST(projinfo_lib, simple) {
 }
 
 TEST(projinfo_lib, error) {
-    auto dump = [](int type, const char *s, void *data) {
+    auto dump = [](PROJInfoLogLevel level, const char *s, void *data) {
         bool *local_found = static_cast<bool *>(data);
-        if (type == 2) {
+        if (level == PROJInfoLogLevel_ERR) {
             std::string str(s);
             if (str.find("unrecognized format / unknown name") !=
                 std::string::npos) {
@@ -70,8 +70,8 @@ TEST(projinfo_lib, error) {
         }
     };
 
-    const char *argv[] = {"testing", "doesnotwork", nullptr};
-    constexpr int argc = sizeof(argv) / sizeof(*argv) - 1;
+    const char *argv[] = {"testing", "doesnotwork"};
+    constexpr int argc = sizeof(argv) / sizeof(*argv);
 
     bool found = false;
     std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
@@ -83,9 +83,9 @@ TEST(projinfo_lib, error) {
 }
 
 TEST(projinfo_lib, warning) {
-    auto dump = [](int type, const char *s, void *data) {
+    auto dump = [](PROJInfoLogLevel level, const char *s, void *data) {
         bool *local_found = static_cast<bool *>(data);
-        if (type == 3) {
+        if (level == PROJInfoLogLevel_WARN) {
             std::string str(s);
             if (str.find("Error when exporting to WKT1:GDAL") !=
                 std::string::npos) {
@@ -94,8 +94,8 @@ TEST(projinfo_lib, warning) {
         }
     };
 
-    const char *argv[] = {"testing", "EPSG:4937", "-o", "WKT1_GDAL", nullptr};
-    constexpr int argc = sizeof(argv) / sizeof(*argv) - 1;
+    const char *argv[] = {"testing", "EPSG:4937", "-o", "WKT1_GDAL"};
+    constexpr int argc = sizeof(argv) / sizeof(*argv);
 
     bool found = false;
     std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(

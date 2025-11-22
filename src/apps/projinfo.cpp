@@ -42,13 +42,12 @@
 int main(int argc, char **argv) {
     pj_stderr_proj_lib_deprecation_warning();
 
-    auto dump = [](int type, const char *s, void *) {
-        switch (type) {
-        case 2:
-        case 3:
+    auto dump = [](PROJInfoLogLevel level, const char *s, void *) {
+        switch (level) {
+        case PROJInfoLogLevel_ERR:
+        case PROJInfoLogLevel_WARN:
             std::cerr << s;
             break;
-
         default:
             std::cout << s;
             break;
