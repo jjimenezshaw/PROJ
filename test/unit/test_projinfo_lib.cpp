@@ -35,24 +35,73 @@
 // ---------------------------------------------------------------------------
 
 TEST(projinfo_lib, simple) {
-    auto dump = [](const char *s) {
-        std::cout << s;
-        std::string str(s);
-        if (str.find("PROJCS[\"ETRS89 / UTM zone 32N\"") != std::string::npos) {
-            //found = true;
+    auto dump = [](int type, const char *s, void *data) {
+        bool *local_found = static_cast<bool *>(data);
+        if (type == 1) {
+            std::string str(s);
+            if (str.find("PROJCS[\"ETRS89 / UTM zone 32N\"") !=
+                std::string::npos) {
+                *local_found = true;
+            }
         }
-    };
-    auto dump_err = [](const char *s) {
-        std::cerr << s;
-        //some_err = true;
     };
 
     const char *argv[] = {"testing", "EPSG:25832", "-o", "WKT1_GDAL", nullptr};
-    int argc = 4;
+    constexpr int argc = sizeof(argv) / sizeof(*argv) - 1;
 
+    bool found = false;
     std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
         PROJInfoOptionsNew(argc, (char **)argv), PROJInfoOptionsFree);
 
-    int res = PROJInfo(options.get(), dump, dump_err, dump_err);
+    int res = PROJInfo(options.get(), dump, &found);
     EXPECT_EQ(res, 0);
+    EXPECT_EQ(found, true);
+}
+
+TEST(projinfo_lib, error) {
+    auto dump = [](int type, const char *s, void *data) {
+        bool *local_found = static_cast<bool *>(data);
+        if (type == 2) {
+            std::string str(s);
+            if (str.find("unrecognized format / unknown name") !=
+                std::string::npos) {
+                *local_found = true;
+            }
+        }
+    };
+
+    const char *argv[] = {"testing", "doesnotwork", nullptr};
+    constexpr int argc = sizeof(argv) / sizeof(*argv) - 1;
+
+    bool found = false;
+    std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
+        PROJInfoOptionsNew(argc, (char **)argv), PROJInfoOptionsFree);
+
+    int res = PROJInfo(options.get(), dump, &found);
+    EXPECT_EQ(res, 1);
+    EXPECT_EQ(found, true);
+}
+
+TEST(projinfo_lib, warning) {
+    auto dump = [](int type, const char *s, void *data) {
+        bool *local_found = static_cast<bool *>(data);
+        if (type == 3) {
+            std::string str(s);
+            if (str.find("Error when exporting to WKT1:GDAL") !=
+                std::string::npos) {
+                *local_found = true;
+            }
+        }
+    };
+
+    const char *argv[] = {"testing", "EPSG:4937", "-o", "WKT1_GDAL", nullptr};
+    constexpr int argc = sizeof(argv) / sizeof(*argv) - 1;
+
+    bool found = false;
+    std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
+        PROJInfoOptionsNew(argc, (char **)argv), PROJInfoOptionsFree);
+
+    int res = PROJInfo(options.get(), dump, &found);
+    EXPECT_EQ(res, 0);
+    EXPECT_EQ(found, true);
 }

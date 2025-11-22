@@ -42,13 +42,23 @@
 int main(int argc, char **argv) {
     pj_stderr_proj_lib_deprecation_warning();
 
-    auto dump = [](const char *s) { std::cout << s; };
-    auto dump_err = [](const char *s) { std::cerr << s; };
+    auto dump = [](int type, const char *s, void *) {
+        switch (type) {
+        case 2:
+        case 3:
+            std::cerr << s;
+            break;
+
+        default:
+            std::cout << s;
+            break;
+        }
+    };
 
     std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
         PROJInfoOptionsNew(argc, argv), PROJInfoOptionsFree);
 
-    int res = PROJInfo(options.get(), dump, dump_err, dump_err);
+    int res = PROJInfo(options.get(), dump, nullptr);
     return res;
 }
 

@@ -92,21 +92,27 @@ struct OutputOptions {
 namespace {
 struct Streamer {
   public:
-    class Stream {
+    template <int TYPE> class Stream {
       private:
         std::stringstream ss{};
-        void (*f)(const char *);
+        void (*f)(int type, const char *, void *);
+        void *data;
         template <typename T> inline void doit(const T &t) {
             if (f) {
                 ss.str("");
                 ss.clear();
                 ss << t;
-                f(ss.str().c_str());
+                f(TYPE, ss.str().c_str(), data);
             }
         }
+        Stream(const Stream &) = delete;
+        Stream(Stream &&) = delete;
+        Stream &operator=(const Stream &) = delete;
+        Stream &operator=(Stream &&) = delete;
 
       public:
-        Stream(void (*f_in)(const char *)) : f{f_in} {}
+        Stream(void (*f_in)(int type, const char *, void *), void *data_in)
+            : f{f_in}, data{data_in} {}
 
         /* for std::endl */
         inline Stream &operator<<(std::ostream &(*func)(std::ostream &)) {
@@ -121,13 +127,12 @@ struct Streamer {
         }
     };
 
-    Streamer(void (*fout)(const char *), void (*ferr)(const char *),
-             void (*fwarn)(const char *))
-        : cout(fout), cerr(ferr), cwarn(fwarn) {}
+    Streamer(void (*callback)(int type, const char *, void *), void *data)
+        : cout(callback, data), cerr(callback, data), cwarn(callback, data) {}
 
-    Stream cout;
-    Stream cerr;
-    Stream cwarn;
+    Stream<1> cout;
+    Stream<2> cerr;
+    Stream<3> cwarn;
 };
 } // namespace
 
@@ -1507,7 +1512,7 @@ static void suggestCompletion(const std::vector<std::string> &args) {
 
 // ---------------------------------------------------------------------------
 
-int main_projinfo(std::vector<std::string> argv, Streamer &strm) {
+static int main_projinfo(std::vector<std::string> argv, Streamer &strm) {
     int argc = argv.size();
     if (argc == 1) {
         strm.cerr << pj_get_release() << std::endl;
@@ -2239,10 +2244,10 @@ PROJInfoOptions *PROJInfoOptionsNew(int argc, char **argv) {
 
 void PROJInfoOptionsFree(PROJInfoOptions *psOptions) { delete psOptions; }
 
-int PROJInfo(PROJInfoOptions *psOptions, void (*fout)(const char *),
-             void (*ferr)(const char *), void (*fwarn)(const char *)) {
+int PROJInfo(PROJInfoOptions *psOptions,
+             void (*callback)(int type, const char *, void *), void *data) {
 
-    Streamer strm(fout, ferr, fwarn);
+    Streamer strm(callback, data);
     if (psOptions == nullptr) {
         strm.cerr << "ERROR: invalid PROJInfoOptions" << std::endl;
         return 1;
