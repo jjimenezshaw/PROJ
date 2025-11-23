@@ -96,13 +96,13 @@ struct Streamer {
       private:
         std::stringstream ss{};
         projinfo_cb_t callback;
-        void *data;
+        void *user_data;
         template <typename T> inline void doit(const T &t) {
             if (callback) {
                 ss.str("");
                 ss.clear();
                 ss << t;
-                callback(LEVEL, ss.str().c_str(), data);
+                callback(LEVEL, ss.str().c_str(), user_data);
             }
         }
         Stream(const Stream &) = delete;
@@ -111,8 +111,8 @@ struct Streamer {
         Stream &operator=(Stream &&) = delete;
 
       public:
-        Stream(projinfo_cb_t cb_in, void *data_in)
-            : callback{cb_in}, data{data_in} {}
+        Stream(projinfo_cb_t cb_in, void *user_data_in)
+            : callback{cb_in}, user_data{user_data_in} {}
 
         /* for std::endl */
         inline Stream &operator<<(std::ostream &(*func)(std::ostream &)) {
@@ -127,8 +127,9 @@ struct Streamer {
         }
     };
 
-    Streamer(projinfo_cb_t callback, void *data)
-        : cout(callback, data), cerr(callback, data), cwarn(callback, data) {}
+    Streamer(projinfo_cb_t callback, void *user_data)
+        : cout(callback, user_data), cerr(callback, user_data),
+          cwarn(callback, user_data) {}
 
     Stream<PROJInfoLogLevel_INFO> cout;
     Stream<PROJInfoLogLevel_ERR> cerr;
@@ -2228,9 +2229,9 @@ static int main_projinfo(PJ_CONTEXT *ctx, int argc, char **argv,
 /////////////////////////////////////
 
 int projinfo(PJ_CONTEXT *ctx, int argc, char **argv, projinfo_cb_t callback,
-             void *data) {
+             void *user_data) {
 
-    Streamer strm(callback, data);
+    Streamer strm(callback, user_data);
     return main_projinfo(ctx, argc, argv, strm);
 }
 

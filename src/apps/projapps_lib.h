@@ -45,13 +45,13 @@ enum PROJInfoLogLevel {
 };
 
 typedef void (*projinfo_cb_t)(PROJInfoLogLevel level, const char *msg,
-                              void *data);
+                              void *user_data);
 
 /*
  * Internal C implementation of projinfo
  */
 int PROJ_DLL projinfo(PJ_CONTEXT *ctx, int argc, char **argv, projinfo_cb_t cb,
-                      void *data);
+                      void *user_data);
 
 #ifdef __cplusplus
 }
