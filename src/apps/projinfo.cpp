@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
         }
     };
 
-    int res = projinfo(argc, argv, dump, nullptr, nullptr);
+    int res = projinfo(nullptr, argc, argv, dump, nullptr);
     return res;
 }
 
