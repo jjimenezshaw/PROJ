@@ -1513,8 +1513,8 @@ static void suggestCompletion(const std::vector<std::string> &args,
 
 // ---------------------------------------------------------------------------
 
-static int main_projinfo(int argc, char **argv, Streamer &strm,
-                         PJ_CONTEXT *ctx) {
+static int main_projinfo(PJ_CONTEXT *ctx, int argc, char **argv,
+                         Streamer &strm) {
     if (argc == 1) {
         strm.cerr << pj_get_release() << std::endl;
         return usage(strm);
@@ -2227,11 +2227,11 @@ static int main_projinfo(int argc, char **argv, Streamer &strm,
 
 /////////////////////////////////////
 
-int projinfo(int argc, char **argv, projinfo_cb_t callback, void *data,
-             PJ_CONTEXT *ctx) {
+int projinfo(PJ_CONTEXT *ctx, int argc, char **argv, projinfo_cb_t callback,
+             void *data) {
 
     Streamer strm(callback, data);
-    return main_projinfo(argc, argv, strm, ctx);
+    return main_projinfo(ctx, argc, argv, strm);
 }
 
 //! @endcond
