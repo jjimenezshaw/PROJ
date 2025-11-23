@@ -1174,7 +1174,8 @@ static int outputOperations(
 
 // ---------------------------------------------------------------------------
 
-static void suggestCompletion(const std::vector<std::string> &args) {
+static void suggestCompletion(const std::vector<std::string> &args,
+                              PJ_CONTEXT *ctx) {
 #ifdef DEBUG_COMPLETION
     for (const auto &arg : args)
         fprintf(stderr, "'%s' ", arg.c_str());
@@ -1190,7 +1191,7 @@ static void suggestCompletion(const std::vector<std::string> &args) {
     bool first = true;
     if (args.empty()) {
         try {
-            auto dbContext = DatabaseContext::create();
+            auto dbContext = DatabaseContext::create({}, {}, ctx);
             for (const auto &authName : dbContext->getAuthorities()) {
                 if (!first)
                     printf(" ");
@@ -1204,7 +1205,7 @@ static void suggestCompletion(const std::vector<std::string> &args) {
     } else if (args.size() == 1 && args[0].front() != '-' &&
                args[0].find(':') == std::string::npos) {
         try {
-            auto dbContext = DatabaseContext::create();
+            auto dbContext = DatabaseContext::create({}, {}, ctx);
             for (const auto &authName : dbContext->getAuthorities()) {
                 if (starts_with(authName, args[0])) {
                     if (!first)
@@ -1258,7 +1259,7 @@ static void suggestCompletion(const std::vector<std::string> &args) {
             return;
         printf("always if_no_direct_transformation never");
         try {
-            auto dbContext = DatabaseContext::create();
+            auto dbContext = DatabaseContext::create({}, {}, ctx);
             for (const auto &authName : dbContext->getAuthorities()) {
                 printf(" %s:", authName.c_str());
             }
@@ -1338,7 +1339,7 @@ static void suggestCompletion(const std::vector<std::string> &args) {
 #endif
 
     try {
-        auto dbContext = DatabaseContext::create();
+        auto dbContext = DatabaseContext::create({}, {}, ctx);
         const auto columnPos = args.back().find(':');
         if (columnPos != std::string::npos) {
             const auto authName = args.back().substr(0, columnPos);
@@ -1522,7 +1523,7 @@ static int main_projinfo(std::vector<std::string> argv, Streamer &strm,
 
     if (argc >= 3 && strcmp(argv[1].c_str(), "completion") == 0) {
         suggestCompletion(
-            std::vector<std::string>(argv.begin() + 3, argv.end()));
+            std::vector<std::string>(argv.begin() + 3, argv.end()), ctx);
         return 0;
     }
 
