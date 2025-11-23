@@ -35,12 +35,6 @@
 extern "C" {
 #endif
 
-struct PROJInfoOptions;
-
-PROJInfoOptions PROJ_DLL *PROJInfoOptionsNew(int argc, char **argv);
-
-void PROJ_DLL PROJInfoOptionsFree(PROJInfoOptions *psOptions);
-
 /*
  * Level for the output given by PROJInfo.
  */
@@ -56,7 +50,8 @@ typedef void (*projinfo_cb_t)(PROJInfoLogLevel level, const char *msg,
 /*
  * Internal C implementation of projinfo
  */
-int PROJ_DLL PROJInfo(PROJInfoOptions *opts, projinfo_cb_t cb, void *data, PJ_CONTEXT* ctx);
+int PROJ_DLL projinfo(int argc, char **argv, projinfo_cb_t cb, void *data,
+                      PJ_CONTEXT *ctx);
 
 #ifdef __cplusplus
 }
