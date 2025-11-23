@@ -1513,17 +1513,15 @@ static void suggestCompletion(const std::vector<std::string> &args,
 
 // ---------------------------------------------------------------------------
 
-static int main_projinfo(std::vector<std::string> argv, Streamer &strm,
+static int main_projinfo(int argc, char **argv, Streamer &strm,
                          PJ_CONTEXT *ctx) {
-    int argc = static_cast<int>(argv.size());
     if (argc == 1) {
         strm.cerr << pj_get_release() << std::endl;
         return usage(strm);
     }
 
-    if (argc >= 3 && strcmp(argv[1].c_str(), "completion") == 0) {
-        suggestCompletion(
-            std::vector<std::string>(argv.begin() + 3, argv.end()), ctx);
+    if (argc >= 3 && strcmp(argv[1], "completion") == 0) {
+        suggestCompletion(std::vector<std::string>(argv + 3, argv + argc), ctx);
         return 0;
     }
 
@@ -2229,33 +2227,11 @@ static int main_projinfo(std::vector<std::string> argv, Streamer &strm,
 
 /////////////////////////////////////
 
-struct PROJInfoOptions {
-    std::vector<std::string> argv{};
-};
-
-PROJInfoOptions *PROJInfoOptionsNew(int argc, char **argv) {
-
-    auto psOptions = std::make_unique<PROJInfoOptions>();
-
-    for (int i = 0; i < argc; i++) {
-        psOptions->argv.push_back(argv[i]);
-    }
-
-    return psOptions.release();
-}
-
-void PROJInfoOptionsFree(PROJInfoOptions *psOptions) { delete psOptions; }
-
-int PROJInfo(PROJInfoOptions *psOptions, projinfo_cb_t callback, void *data,
+int projinfo(int argc, char **argv, projinfo_cb_t callback, void *data,
              PJ_CONTEXT *ctx) {
 
     Streamer strm(callback, data);
-    if (psOptions == nullptr) {
-        strm.cerr << "ERROR: invalid PROJInfoOptions" << std::endl;
-        return 1;
-    }
-
-    return main_projinfo(psOptions->argv, strm, ctx);
+    return main_projinfo(argc, argv, strm, ctx);
 }
 
 //! @endcond

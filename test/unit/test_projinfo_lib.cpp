@@ -50,10 +50,7 @@ TEST(projinfo_lib, simple) {
     constexpr int argc = sizeof(argv) / sizeof(*argv);
 
     bool found = false;
-    std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
-        PROJInfoOptionsNew(argc, (char **)argv), PROJInfoOptionsFree);
-
-    int res = PROJInfo(options.get(), dump, &found, nullptr);
+    int res = projinfo(argc, (char **)argv, dump, &found, nullptr);
     EXPECT_EQ(res, 0);
     EXPECT_EQ(found, true);
 }
@@ -74,10 +71,7 @@ TEST(projinfo_lib, error) {
     constexpr int argc = sizeof(argv) / sizeof(*argv);
 
     bool found = false;
-    std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
-        PROJInfoOptionsNew(argc, (char **)argv), PROJInfoOptionsFree);
-
-    int res = PROJInfo(options.get(), dump, &found, nullptr);
+    int res = projinfo(argc, (char **)argv, dump, &found, nullptr);
     EXPECT_EQ(res, 1);
     EXPECT_EQ(found, true);
 }
@@ -98,10 +92,7 @@ TEST(projinfo_lib, warning) {
     constexpr int argc = sizeof(argv) / sizeof(*argv);
 
     bool found = false;
-    std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)> options(
-        PROJInfoOptionsNew(argc, (char **)argv), PROJInfoOptionsFree);
-
-    int res = PROJInfo(options.get(), dump, &found, nullptr);
+    int res = projinfo(argc, (char **)argv, dump, &found, nullptr);
     EXPECT_EQ(res, 0);
     EXPECT_EQ(found, true);
 }
@@ -123,11 +114,7 @@ TEST(projinfo_lib, use_ctx) {
         constexpr int argc = sizeof(argv) / sizeof(*argv);
 
         bool found = false;
-        std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)>
-            options(PROJInfoOptionsNew(argc, (char **)argv),
-                    PROJInfoOptionsFree);
-
-        int res = PROJInfo(options.get(), dump, &found, ctx);
+        int res = projinfo(argc, (char **)argv, dump, &found, nullptr);
         EXPECT_EQ(res, 0);
         EXPECT_EQ(found, true);
     }
@@ -136,13 +123,18 @@ TEST(projinfo_lib, use_ctx) {
         constexpr int argc = sizeof(argv) / sizeof(*argv);
 
         bool found = false;
-        std::unique_ptr<PROJInfoOptions, decltype(&PROJInfoOptionsFree)>
-            options(PROJInfoOptionsNew(argc, (char **)argv),
-                    PROJInfoOptionsFree);
-
-        int res = PROJInfo(options.get(), dump, &found, ctx);
+        int res = projinfo(argc, (char **)argv, dump, &found, nullptr);
         EXPECT_EQ(res, 0);
         EXPECT_EQ(found, true);
     }
     proj_context_destroy(ctx);
+}
+
+TEST(projinfo_lib, works_without_cb) {
+    // Testing it doesn't crash.
+    const char *argv[] = {"testing", "EPSG:25832", "-o", "WKT1_GDAL"};
+    constexpr int argc = sizeof(argv) / sizeof(*argv);
+
+    int res = projinfo(argc, (char **)argv, nullptr, nullptr, nullptr);
+    EXPECT_EQ(res, 0);
 }
