@@ -44,17 +44,18 @@ int main(int argc, char **argv) {
 
     auto dump = [](PROJInfoLogLevel level, const char *s, void *) {
         switch (level) {
-        case PROJInfoLogLevel_ERR:
         case PROJInfoLogLevel_WARN:
+        case PROJInfoLogLevel_ERR:
             std::cerr << s;
             break;
+        case PROJInfoLogLevel_INFO:
         default:
             std::cout << s;
             break;
         }
     };
 
-    int res = projinfo(nullptr, argc, argv, dump, nullptr);
+    int res = projinfo(nullptr, argc - 1, ++argv, dump, nullptr);
     return res;
 }
 

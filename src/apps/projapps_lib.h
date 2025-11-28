@@ -36,7 +36,7 @@ extern "C" {
 #endif
 
 /*
- * Level for the output given by PROJInfo.
+ * Level for the output given by projinfo in its callback.
  */
 enum PROJInfoLogLevel {
     PROJInfoLogLevel_INFO = 1,
@@ -48,7 +48,15 @@ typedef void (*projinfo_cb_t)(PROJInfoLogLevel level, const char *msg,
                               void *user_data);
 
 /*
- * Internal C implementation of projinfo
+ * Internal C implementation of projinfo CLI application.
+ * See https://proj.org/apps/projinfo.html for more documentation.
+ * @param ctx context. It can be nullptr.
+ * @param argc number for parameters in argv.
+ * @param argv list of char* with the command parameters of projinfo.
+ *  It does not contain the program name as first parameter.
+ * @param cb callback that to get the output of projinfo.
+ *  It can be very fragmented, no necesarily by lines.
+ * @param user_data pointer for data passed to the callback.
  */
 int PROJ_DLL projinfo(PJ_CONTEXT *ctx, int argc, char **argv, projinfo_cb_t cb,
                       void *user_data);
