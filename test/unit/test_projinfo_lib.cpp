@@ -46,7 +46,7 @@ TEST(projinfo_lib, simple) {
         }
     };
 
-    const char *argv[] = {"testing", "EPSG:25832", "-o", "WKT1_GDAL"};
+    const char *argv[] = {"EPSG:25832", "-o", "WKT1_GDAL"};
     constexpr int argc = sizeof(argv) / sizeof(*argv);
 
     bool found = false;
@@ -67,7 +67,7 @@ TEST(projinfo_lib, error) {
         }
     };
 
-    const char *argv[] = {"testing", "doesnotwork"};
+    const char *argv[] = {"doesnotwork"};
     constexpr int argc = sizeof(argv) / sizeof(*argv);
 
     bool found = false;
@@ -88,7 +88,7 @@ TEST(projinfo_lib, warning) {
         }
     };
 
-    const char *argv[] = {"testing", "EPSG:4937", "-o", "WKT1_GDAL"};
+    const char *argv[] = {"EPSG:4937", "-o", "WKT1_GDAL"};
     constexpr int argc = sizeof(argv) / sizeof(*argv);
 
     bool found = false;
@@ -110,7 +110,7 @@ TEST(projinfo_lib, use_ctx) {
 
     PJ_CONTEXT *ctx = proj_context_create();
     {
-        const char *argv[] = {"testing", "EPSG:25832", "-o", "WKT1_GDAL"};
+        const char *argv[] = {"EPSG:25832", "-o", "WKT1_GDAL"};
         constexpr int argc = sizeof(argv) / sizeof(*argv);
 
         bool found = false;
@@ -119,7 +119,7 @@ TEST(projinfo_lib, use_ctx) {
         EXPECT_EQ(found, true);
     }
     {
-        const char *argv[] = {"testing", "EPSG:25833", "-o", "WKT1_GDAL"};
+        const char *argv[] = {"EPSG:25833", "-o", "WKT1_GDAL"};
         constexpr int argc = sizeof(argv) / sizeof(*argv);
 
         bool found = false;
@@ -132,7 +132,7 @@ TEST(projinfo_lib, use_ctx) {
 
 TEST(projinfo_lib, works_without_cb) {
     // Testing it doesn't crash.
-    const char *argv[] = {"testing", "EPSG:25832", "-o", "WKT1_GDAL"};
+    const char *argv[] = {"EPSG:25832", "-o", "WKT1_GDAL"};
     constexpr int argc = sizeof(argv) / sizeof(*argv);
 
     int res = projinfo(nullptr, argc, (char **)argv, nullptr, nullptr);

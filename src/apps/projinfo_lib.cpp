@@ -1516,13 +1516,13 @@ static void suggestCompletion(const std::vector<std::string> &args,
 
 static int main_projinfo(PJ_CONTEXT *ctx, int argc, char **argv,
                          Streamer &strm) {
-    if (argc == 1) {
+    if (argc <= 0) {
         strm.cerr << pj_get_release() << std::endl;
         return usage(strm);
     }
 
-    if (argc >= 3 && strcmp(argv[1], "completion") == 0) {
-        suggestCompletion(std::vector<std::string>(argv + 3, argv + argc), ctx);
+    if (argc >= 2 && strcmp(argv[0], "completion") == 0) {
+        suggestCompletion(std::vector<std::string>(argv + 2, argv + argc), ctx);
         return 0;
     }
 
@@ -1566,7 +1566,7 @@ static int main_projinfo(PJ_CONTEXT *ctx, int argc, char **argv,
     std::string listCRSFilter;
     bool listCRSSpecified = false;
 
-    for (int i = 1; i < argc; i++) {
+    for (int i = 0; i < argc; i++) {
         std::string arg(argv[i]);
         if (arg == "-o" && i + 1 < argc) {
             outputSwitchSpecified = true;
