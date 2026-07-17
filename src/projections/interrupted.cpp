@@ -155,12 +155,8 @@ PJ *PJ_PROJECTION(interrupted) {
     if (Q->base_pj == nullptr)
         return interrupted_destructor(P, PROJ_ERR_OTHER /*ENOMEM*/);
     Q->base_pj->ctx = P->ctx;
-    Q->base_pj->es = P->es;
-    Q->base_pj->one_es = P->one_es;
     Q->base_pj->k0 = P->k0;
-    Q->base_pj->f = P->f;
-    Q->base_pj->f2 = P->f2;
-    Q->base_pj->n = P->n;
+    pj_calc_ellipsoid_params(Q->base_pj, P->a, P->es);
     Q->base_pj = get_fun_ptr()(Q->base_pj);
     if (Q->base_pj == nullptr)
         return interrupted_destructor(P, PROJ_ERR_OTHER /*ENOMEM*/);
