@@ -4,9 +4,9 @@
 Hourglass
 ********************************************************************************
 
-Snyder's Hourglass projection, using the extended formulas described in :cite:`JimenezShaw2025`.
+Snyder's Hourglass projection, using the extended formulas described in :cite:`JimenezShaw2026`.
 
-.. versionadded:: 9.8.0
+.. versionadded:: 9.9.0
 
 +---------------------+----------------------------------------------------------+
 | **Classification**  | Pseudo cylindrical, equal area                           |
