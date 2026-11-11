@@ -15,7 +15,7 @@ apt-get update -y
 
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends  -o APT::Immediate-Configure=0  \
     autoconf automake libtool make cmake ccache pkg-config sqlite3 tar zip curl ca-certificates jq \
-    python3-pytest python3-ruamel.yaml python3-jsonschema \
+    python3-pytest python3-ruamel.yaml python3-jsonschema iputils-ping \
     gcc-$GCC_VERSION-multilib g++-$GCC_VERSION-multilib g++-$GCC_VERSION \
     libsqlite3-dev:$ARCH libgtest-dev:$ARCH \
     libtiff-dev:$ARCH libwebp-dev:$ARCH libzstd-dev:$ARCH \
