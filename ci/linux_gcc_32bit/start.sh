@@ -15,7 +15,7 @@ apt-get update -y
 
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends  -o APT::Immediate-Configure=0  \
     autoconf automake libtool make cmake ccache pkg-config sqlite3 tar zip curl ca-certificates jq \
-    python3-pytest python3-ruamel.yaml python3-jsonschema iputils-ping \
+    python3-pytest python3-ruamel.yaml python3-jsonschema \
     gcc-$GCC_VERSION-multilib g++-$GCC_VERSION-multilib g++-$GCC_VERSION \
     libsqlite3-dev:$ARCH libgtest-dev:$ARCH \
     libtiff-dev:$ARCH libwebp-dev:$ARCH libzstd-dev:$ARCH \
@@ -43,9 +43,10 @@ else
     mkdir -p $HOME/.ccache
 fi
 
-ccache -M 500M
+echo "Testing connection to cdn.proj.org"
+curl -I https://cdn.proj.org/files.geojson
 
-ping -c 1 cdn.proj.org
+ccache -M 500M
 
 CC="gcc-$GCC_VERSION" CXX="g++-$GCC_VERSION" CMAKE_BUILD_TYPE=RelWithDebInfo ./ci/install.sh
 
