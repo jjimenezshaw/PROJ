@@ -45,6 +45,8 @@ fi
 
 ccache -M 500M
 
+ping -c 1 cdn.proj.org
+
 CC="gcc-$GCC_VERSION" CXX="g++-$GCC_VERSION" CMAKE_BUILD_TYPE=RelWithDebInfo ./ci/install.sh
 
 echo "Saving ccache..."
