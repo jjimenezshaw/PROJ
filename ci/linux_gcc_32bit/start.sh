@@ -34,6 +34,8 @@ export SQLITE3_LIBS="-L$LIBDIR -lsqlite3"
 
 export PKG_CONFIG=i686-linux-gnu-pkg-config
 
+export PROJ_CURL_VERBOSE=1
+
 cd "$WORK_DIR"
 
 if test -f "$WORK_DIR/ccache.tar.gz"; then
